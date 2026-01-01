@@ -1,0 +1,33 @@
+{
+  "name": "local-invoice",
+  "version": "1.0.0",
+  "description": "Invoice management system with customer management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "invoice",
+    "customer-management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "csurf": "^1.11.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "mysql2": "^3.16.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

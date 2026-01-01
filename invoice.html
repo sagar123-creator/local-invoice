@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sandhya Sea Food Supplier - Invoice</title>
+  <style>
+    :root {
+      --border-color: #000;
+      --font-main: "Segoe UI", Arial, sans-serif;
+      --font-size-small: 11px;
+      --font-size-normal: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      background: #f0f0f0;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 10px auto;
+      padding: 12px 14px;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+      font-size: var(--font-size-normal);
+      border: 1px solid var(--border-color);
+    }
+
+    .controls {
+      width: 210mm;
+      margin: 10px auto 0;
+      text-align: right;
+    }
+
+    .controls button {
+      padding: 6px 14px;
+      margin-left: 4px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #fafafa;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .header-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+      padding: 2px 0; /* slightly reduce vertical space in header */
+    }
+
+    .small-seal {
+      width: 72px;
+      height: 72px;
+      position: relative;
+    }
+
+    .small-seal img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      display: block;
+      transform: translate(-6px, -6px);
+    }
+    .header-top .small-seal {
+      justify-self: start;
+      overflow: visible;
+    }
+
+    .header-top .center-logo,
+    .header-top .center-column,
+    .header-top .invoice-label {
+      justify-self: center;
+    }
+
+    .header-top .owner-info {
+      justify-self: end;
+    }
+
+    .invoice-label {
+      font-weight: 900;
+      text-align: center;
+      margin: 0;
+      font-size: 16px;
+      text-transform: uppercase;
+      display: inline-block;
+      padding: 0 6px 4px 6px;
+      border-bottom: 2px solid var(--border-color);
+      letter-spacing: 1px;
+      justify-self: center;
+    }
+
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-circle {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 1px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .company-title {
+      text-align: left;
+    }
+
+    .company-title h1 {
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .company-title h2 {
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .invoice-label {
+      font-weight: 700;
+      text-align: center;
+      
+      
+      margin-bottom: 6px;
+      font-size: 15px;
+      text-transform: uppercase;
+    }
+
+    .center-logo {
+      display: flex;
+      justify-content: center;
+      align-self: center;
+      margin: 2px 0 6px 0; /* reduce vertical margin to shrink header area */
+    }
+
+    .center-logo img {
+      max-width: 380px;
+      max-height: 120px;
+      width: auto;
+      height: auto;
+      display: inline-block;
+    }
+
+    /* emphasize the address band like sample */
+    .top-band {
+      margin-top: 8px;
+      border-top: 2px solid var(--border-color);
+      border-bottom: 2px solid var(--border-color);
+      padding: 6px 0;
+      font-size: 13px;
+      text-align: center;
+      font-weight: 700;
+      background: #fff;
+    }
+
+    /* stronger table borders like the sample */
+    table, th, td {
+      border: 1px solid var(--border-color);
+    }
+
+    /* allow the items area to visually expand */
+    #itemsBody tr td {
+      padding: 8px 6px;
+    }
+
+    /* make footer boxes consistent (defined later with msme-box for layout) */
+    .owner-info {
+      text-align: right;
+      font-size: var(--font-size-small);
+    }
+
+    .top-band {
+      margin-top: 6px;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 4px 0;
+      font-size: var(--font-size-small);
+      text-align: center;
+    }
+
+    .msme-fssai {
+      margin-top: 4px;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .fssai-img {
+      height: 18px;
+      vertical-align: middle;
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    .udyam {
+      color: #0b66c3;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .header-top .owner-info {
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .info-grid {
+      margin-top: 8px;
+      border: 1px solid var(--border-color);
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      font-size: var(--font-size-small);
+    }
+
+    .info-cell {
+      padding: 6px 8px;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .info-cell:last-child {
+      border-right: none;
+    }
+
+    .label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea, input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #aaa;
+      font-family: var(--font-main);
+      font-size: var(--font-size-normal);
+      outline: none;
+      padding: 2px;
+    }
+
+    textarea {
+      min-height: 70px; /* allow multiple lines by default */
+      resize: vertical; /* user can adjust height if needed */
+    }
+
+    /* invoice metadata small table: remove inner borders around fields like INVOICE NO */
+    .info-cell table,
+    .info-cell table th,
+    .info-cell table td {
+      border: none !important;
+      border-collapse: collapse;
+      padding: 2px 0;
+      background: transparent !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: var(--font-size-small);
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 4px 5px;
+      text-align: left;
+    }
+
+    th {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .col-sr {
+      width: 6%;
+      text-align: center;
+    }
+
+    .col-particular {
+      width: 44%;
+    }
+
+    .col-qty,
+    .col-rate,
+    .col-amount {
+      width: 16%;
+      text-align: right;
+    }
+
+    .col-qty input,
+    .col-rate input,
+    .col-amount input {
+      text-align: right;
+    }
+
+    .total-row td {
+      font-weight: 600;
+    }
+
+    .no-border {
+      border: none !important;
+    }
+
+    .amount-input {
+      background: #fdfdfd;
+    }
+
+    /* Footer layout: top row (MSME/FSSAI left, Notes right) */
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0; /* removed space between top footer boxes */
+      margin-top: 8px;
+      font-size: var(--font-size-small);
+      align-items: stretch;
+    }
+
+    .msme-box, .notes {
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .notes ol { margin: 6px 0 0 16px; }
+
+    /* bank details table: remove any inner borders (force override) */
+    table.bank-details-table,
+    .bank-details-table,
+    .bank-details table.bank-details-table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      width: 100%;
+      margin: 0;
+    }
+    /* Strong override: remove borders from the bank details table element and its cells */
+    .bank-details .bank-details-table,
+    .bank-details table.bank-details-table,
+    .bank-details-table {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-collapse: collapse;
+      border-spacing: 0;
+      width: 100%;
+      margin: 0;
+      background: transparent !important;
+    }
+
+    .bank-details .bank-details-table tr,
+    .bank-details .bank-details-table th,
+    .bank-details .bank-details-table td,
+    .bank-details-table tr,
+    .bank-details-table th,
+    .bank-details-table td {
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      padding: 2px 0;
+      text-align: left;
+      background: transparent !important;
+    }
+
+    /* Footer bottom: bank details (left) and two signature boxes on right */
+    .footer-bottom {
+      margin-top: 0; /* remove vertical gap between top and bottom footer rows */
+      display: grid;
+      grid-template-columns: 1fr 0.9fr 0.9fr;
+      gap: 0; /* removed space between bottom footer boxes */
+      font-size: var(--font-size-small);
+      align-items: stretch;
+    }
+
+    .bank-details {
+      border: 1px solid var(--border-color); /* outer bank-details box border kept */
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .signature-box {
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 130px;
+      background: #fff;
+    }
+
+    .signature-box .signature-image { display:block; max-width:120px; max-height:80px; margin:6px auto; }
+
+    /* ensure msme, notes and bank boxes match signature box height */
+    .msme-box, .notes, .bank-details { min-height: 130px; }
+
+    .signature-label {
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .total-words {
+      margin-top: 6px;
+      font-size: var(--font-size-small);
+    }
+
+    .total-words span.label {
+      display: inline-block;
+      min-width: 140px;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+      }
+      .controls {
+        display: none;
+      }
+      input, textarea {
+        border: none !important;
+      }
+      /* A4 print optimizations to fit everything on one page */
+      @page { size: A4 portrait; margin: 8mm; }
+      html, body { height: 297mm; }
+      .page {
+        width: 190mm; /* slightly reduce printable width */
+        min-height: 277mm;
+        padding: 8px 10px;
+        font-size: 11px; /* slightly smaller for print */
+      }
+      /* reduce header/logo footprint */
+      .center-logo img { max-height: 80px; max-width: 320px; }
+      .invoice-label { font-size: 14px; padding-bottom: 2px; }
+      .header-top { gap: 6px; padding: 0 0 2px 0; }
+      /* tighten table spacing */
+      table { font-size: 10.5px; }
+      th, td { padding: 3px 4px; }
+      textarea { min-height: 40px; }
+      /* avoid page breaks inside the main invoice container */
+      .page, .header-top, #itemsTable, .footer-top, .footer-bottom { page-break-inside: avoid; }
+      /* reduce footer box min-height to fit */
+      .signature-box, .msme-box, .notes, .bank-details { min-height: 90px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="addRow()">Add Row</button>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <div class="page">
+    <div class="header-top">
+      <div class="small-seal">
+        <img src="image/logo1.png" alt="seal" />
+      </div>
+
+      <div class="invoice-label">INVOICE</div>
+
+      <div class="owner-info">
+        <div><strong>Ramesh Rathod :</strong> 9820954719<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9819486341</div>
+      </div>
+    </div>
+
+    <div class="center-logo">
+      <img src="image/sandhya.png" alt="Sandhiya Sea Food Supplier" />
+    </div>
+
+    <div class="msme-fssai">
+      <div class="fssai-block">
+        <!-- place your FSSAI image at image/fssai.png when ready -->
+        <img src="image/fssai.png" alt="FSSAI" class="fssai-img" />
+        <strong>11524001000123</strong>
+      </div>
+      <div><span class="udyam">UDYAM-MH-19-0276267</span></div>
+    </div>
+
+    <div class="top-band">
+      <span style="font-weight:800;">
+        &#128205; 1773 BPT Gowdown Near Police Station Sassoon Dock Colaba Mumbai -400005
+      </span>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-cell">
+        <span class="label">CUSTOMER NAME</span>
+        <input type="text" id="customerName" placeholder="Customer name" />
+        <span class="label" style="margin-top:6px;">SHIPPING ADDRESS</span>
+          <textarea id="shippingAddress" placeholder="Address" rows="4"></textarea>
+      </div>
+      <div class="info-cell">
+        <table style="border-collapse: collapse; width:100%; font-size:10px;">
+          <tr>
+            <td class="label">INVOICE NO :</td>
+            <td><input type="text" id="invoiceNo" value="INV0001" /></td>
+          </tr>
+          <tr>
+            <td class="label">BILL CREATED ON :</td>
+            <td><input type="date" id="billDate" /></td>
+          </tr>
+          <tr>
+            <td class="label">From Date :</td>
+            <td><input type="date" id="fromDate" /></td>
+          </tr>
+          <tr>
+            <td class="label">To Date :</td>
+            <td><input type="date" id="toDate" /></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th class="col-sr">Sr No.</th>
+          <th class="col-particular">Particulars</th>
+          <th class="col-qty">Quantity (Kg)</th>
+          <th class="col-rate">Rate</th>
+          <th class="col-amount">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <!-- Rows will be added by JS -->
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td class="no-border" colspan="4" style="text-align:right;">Total</td>
+          <td style="text-align:right;">
+            <span id="totalAmountDisplay">0.00</span>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="total-words">
+      <span class="label">Invoice Total (In words) :</span>
+      <span id="totalInWords">Zero Only.</span>
+    </div>
+
+    <div class="footer-top">
+      <div class="msme-box">
+        <div><strong>MSME NO: </strong><span class="udyam">UDYAM-MH-19-0276267</span></div>
+        <div style="margin-top:8px;"><strong>FSSAI: </strong><span>11524001000123</span></div>
+      </div>
+
+      <div class="notes">
+        <strong>Notes :</strong>
+        <ol style="margin:6px 0 0 16px; padding:0;">
+          <li>Please check the seafood at the time of delivery. No complaints will be accepted after delivery.</li>
+          <li>Goods once sold will not be taken back.</li>
+          <li>All Cheques/Drafts payable in the name of SANDHYA SEA FOOD SUPPLIER.</li>
+          <li>Subject to Mumbai Jurisdiction only.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="bank-details">
+        <strong>Bank details for NEFT/RTGS:</strong>
+        <table class="bank-details-table" style="margin-top:6px; width:100%;">
+          <tr>
+            <td style="width:160px;">Beneficiary Name :</td>
+            <td style="font-weight:700;">SANDHYA SEA FOOD SUPPLIER</td>
+          </tr>
+          <tr>
+            <td>Bank Name :</td>
+            <td style="font-weight:700;">Union Bank Of India</td>
+          </tr>
+          <tr>
+            <td>Branch Name :</td>
+            <td style="font-weight:700;">Mumbai Colaba</td>
+          </tr>
+          <tr>
+            <td>Bank A/c Number :</td>
+            <td style="font-weight:700;">510351000915091</td>
+          </tr>
+          <tr>
+            <td>Bank IFSC Code :</td>
+            <td style="font-weight:700;">UBIN0901687</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="signature-box" style="text-align:left;">
+        <div style="font-weight:700;">For Customer</div>
+        <div class="signature-label">Reciver's Signature</div>
+      </div>
+
+      <div class="signature-box" style="text-align:center;">
+        <div style="font-weight:700;">For Sandhya Sea Food Supplier</div>
+        <img src="image/sign.png" alt="signature" class="signature-image" />
+        <div class="signature-label">Authorised Signatory</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const itemsBody = document.getElementById("itemsBody");
+    const totalAmountDisplay = document.getElementById("totalAmountDisplay");
+    const totalInWords = document.getElementById("totalInWords");
+
+    function addRow(particular = "", qty = "", rate = "") {
+      const rowIndex = itemsBody.children.length + 1;
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td class="col-sr">${rowIndex}</td>
+        <td class="col-particular">
+          <input type="text" class="particular" value="${particular}">
+        </td>
+        <td class="col-qty">
+          <input type="text" class="qty" value="${qty}">
+        </td>
+        <td class="col-rate">
+          <input type="text" class="rate" value="${rate}">
+        </td>
+        <td class="col-amount">
+          <input type="text" class="amount amount-input" readonly>
+        </td>
+      `;
+      itemsBody.appendChild(tr);
+
+      const qtyInput = tr.querySelector(".qty");
+      const rateInput = tr.querySelector(".rate");
+      qtyInput.addEventListener("input", updateTotals);
+      rateInput.addEventListener("input", updateTotals);
+    }
+
+    function updateTotals() {
+      let total = 0;
+      [...itemsBody.children].forEach(tr => {
+        const qty = parseFloat(tr.querySelector(".qty").value) || 0;
+        const rate = parseFloat(tr.querySelector(".rate").value) || 0;
+        const amount = qty * rate;
+        tr.querySelector(".amount").value = amount ? amount.toFixed(2) : "";
+        total += amount;
+      });
+      totalAmountDisplay.textContent = total.toFixed(2);
+      totalInWords.textContent = numberToWordsIndian(Math.round(total)) + " Only.";
+    }
+
+    // Simple Indian number system converter (up to crores)
+    function numberToWordsIndian(num) {
+      if (num === 0) return "Zero";
+
+      const a = [
+        "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+        "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+        "Seventeen", "Eighteen", "Nineteen"
+      ];
+      const b = [
+        "", "", "Twenty", "Thirty", "Forty", "Fifty",
+        "Sixty", "Seventy", "Eighty", "Ninety"
+      ];
+
+      function twoDigits(n) {
+        if (n < 20) return a[n];
+        const tens = Math.floor(n / 10);
+        const ones = n % 10;
+        return b[tens] + (ones ? " " + a[ones] : "");
+      }
+
+      function threeDigits(n) {
+        const hundred = Math.floor(n / 100);
+        const rest = n % 100;
+        let str = "";
+        if (hundred) str += a[hundred] + " Hundred";
+        if (rest) str += (hundred ? " " : "") + twoDigits(rest);
+        return str;
+      }
+
+      let result = "";
+      const crore = Math.floor(num / 10000000);
+      num %= 10000000;
+      const lakh = Math.floor(num / 100000);
+      num %= 100000;
+      const thousand = Math.floor(num / 1000);
+      num %= 1000;
+      const hundred = num;
+
+      if (crore) result += threeDigits(crore) + " Crore ";
+      if (lakh) result += threeDigits(lakh) + " Lakh ";
+      if (thousand) result += threeDigits(thousand) + " Thousand ";
+      if (hundred) result += threeDigits(hundred);
+
+      return result.trim();
+    }
+
+    // init with empty rows tuned for single-page print (fewer rows)
+    for (let i = 0; i < 8; i++) addRow();
+  </script>
+</body>
+</html> 

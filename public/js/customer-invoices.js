@@ -86,6 +86,10 @@ function viewInvoice(invoiceId) {
   window.location.href = `/invoice.html?invoiceId=${invoiceId}`;
 }
 
+function generateStatement() {
+  window.location.href = `/statement.html?customerId=${customerId}`;
+}
+
 async function deleteInvoice(invoiceId, invoiceNumber) {
   if (!confirm(`Are you sure you want to delete invoice "${invoiceNumber}"? This action cannot be undone.`)) {
     return;

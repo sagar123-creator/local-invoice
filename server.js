@@ -101,6 +101,44 @@ app.get('/api/customers/:id/latest-balance', auth, async (req, res) => {
   res.json({ balance: rows.length ? rows[0].current_balance : 0 });
 });
 
+app.get('/api/customers/:id/statement', auth, async (req, res) => {
+  const { fromDate, toDate } = req.query;
+  const customerId = req.params.id;
+
+  try {
+    // Get customer info
+    const [customerRows] = await db.query('SELECT * FROM customers WHERE id=?', [customerId]);
+    const customer = customerRows[0];
+
+    // Get opening balance (last balance before fromDate)
+    const [openingRows] = await db.query(
+      'SELECT current_balance FROM invoices WHERE customer_id=? AND invoice_date < ? ORDER BY invoice_date DESC, created_at DESC LIMIT 1',
+      [customerId, fromDate]
+    );
+    const openingBalance = openingRows.length ? parseFloat(openingRows[0].current_balance) : 0;
+
+    // Get invoices in date range
+    const [invoices] = await db.query(
+      'SELECT * FROM invoices WHERE customer_id=? AND invoice_date >= ? AND invoice_date <= ? ORDER BY invoice_date ASC, created_at ASC',
+      [customerId, fromDate, toDate]
+    );
+
+    // Get items for each invoice
+    for (let invoice of invoices) {
+      const [items] = await db.query(
+        'SELECT * FROM invoice_items WHERE invoice_id=? ORDER BY id',
+        [invoice.id]
+      );
+      invoice.items = items;
+    }
+
+    res.json({ customer, openingBalance, invoices });
+  } catch (error) {
+    console.error('Error generating statement:', error);
+    res.status(500).json({ error: 'Error generating statement' });
+  }
+});
+
 /* Invoices */
 app.get('/api/customers/:id/invoices', auth, async (req, res) => {
   const [rows] = await db.query(
@@ -111,7 +149,14 @@ app.get('/api/customers/:id/invoices', auth, async (req, res) => {
 });
 
 app.get('/api/invoices/:id', auth, async (req, res) => {
-  const [[invoice]] = await db.query('SELECT * FROM invoices WHERE id=?', [req.params.id]);
+  const [[invoice]] = await db.query(
+    `SELECT i.*, c.name AS customer_name, c.address
+     FROM invoices i
+     JOIN customers c ON i.customer_id = c.id
+     WHERE i.id=?`,
+    [req.params.id]
+  );
+
   const [items] = await db.query('SELECT * FROM invoice_items WHERE invoice_id=?', [req.params.id]);
   invoice.items = items;
   res.json(invoice);
@@ -136,6 +181,51 @@ app.post('/api/invoices', auth, async (req, res) => {
   }
 
   res.json({ success: true, id: r.insertId });
+});
+
+app.put('/api/invoices/:id', auth, async (req, res) => {
+  const { invoiceNumber, invoiceDate, items, receivedAmount, previousBalance } = req.body;
+  const invoiceId = req.params.id;
+  
+  try {
+    let total = items.reduce((s, i) => s + i.quantity * i.rate, 0);
+    let current = total - receivedAmount + previousBalance;
+
+    // Update invoice
+    await db.query(
+      `UPDATE invoices SET invoice_number=?, invoice_date=?, total_amount=?, received_amount=?, previous_balance=?, current_balance=? WHERE id=?`,
+      [invoiceNumber, invoiceDate, total, receivedAmount, previousBalance, current, invoiceId]
+    );
+
+    // Delete existing items
+    await db.query('DELETE FROM invoice_items WHERE invoice_id=?', [invoiceId]);
+
+    // Insert new items
+    for (let i of items) {
+      await db.query(
+        'INSERT INTO invoice_items (invoice_id,particular,quantity,rate,amount) VALUES (?,?,?,?,?)',
+        [invoiceId, i.particular, i.quantity, i.rate, i.quantity * i.rate]
+      );
+    }
+
+    res.json({ success: true, id: invoiceId });
+  } catch (error) {
+    console.error('Error updating invoice:', error);
+    res.status(500).json({ error: 'Error updating invoice' });
+  }
+});
+
+app.delete('/api/invoices/:id', auth, async (req, res) => {
+  try {
+    // Delete invoice items first
+    await db.query('DELETE FROM invoice_items WHERE invoice_id=?', [req.params.id]);
+    // Delete invoice
+    await db.query('DELETE FROM invoices WHERE id=?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    res.status(500).json({ error: 'Error deleting invoice' });
+  }
 });
 
 /* Start */

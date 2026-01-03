@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Statement of Account</title>
+  <style>
+    :root {
+      --border-color: #000;
+      --font-main: "Segoe UI", Arial, sans-serif;
+      --font-size-small: 11px;
+      --font-size-normal: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      background: #f0f0f0;
+    }
+
+    .date-selector {
+      width: 210mm;
+      margin: 10px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .date-selector h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+
+    .date-inputs {
+      display: flex;
+      gap: 15px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .date-field {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .date-field label {
+      display: block;
+      margin-bottom: 5px;
+      color: #666;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .date-field input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .btn-generate {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .btn-generate:hover {
+      background: #5568d3;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 10px auto;
+      padding: 12px 14px;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+      font-size: var(--font-size-normal);
+      border: 2px solid var(--border-color);
+      display: none;
+    }
+
+    .page.visible {
+      display: block;
+    }
+
+    .controls {
+      width: 210mm;
+      margin: 10px auto 0;
+      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .controls button {
+      padding: 8px 16px;
+      margin-left: 4px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #fafafa;
+      font-weight: 600;
+    }
+
+    .btn-back {
+      background: #667eea;
+      color: white;
+      border: none;
+    }
+
+    .btn-back:hover {
+      background: #5568d3;
+    }
+
+    .btn-print {
+      background: #28a745;
+      color: white;
+      border: none;
+    }
+
+    .btn-print:hover {
+      background: #218838;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+      padding: 2px 0;
+    }
+
+    .small-seal {
+      width: 72px;
+      height: 72px;
+      position: relative;
+    }
+
+    .small-seal img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      display: block;
+      transform: translate(-6px, -6px);
+    }
+
+    .header-top .small-seal {
+      justify-self: start;
+      overflow: visible;
+    }
+
+    .center-logo {
+      display: flex;
+      justify-content: center;
+      align-self: center;
+      margin: 2px 0 6px 0;
+    }
+
+    .center-logo img {
+      max-width: 380px;
+      max-height: 120px;
+      width: auto;
+      height: auto;
+      display: inline-block;
+    }
+
+    .owner-info {
+      text-align: right;
+      font-size: 14px;
+    }
+
+    .owner-info div {
+      margin: 2px 0;
+    }
+
+    .msme-fssai {
+      margin-top: 4px;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .fssai-block {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fssai-img {
+      height: 18px;
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .udyam {
+      color: #0b66c3;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .header-top .owner-info {
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .top-band {
+      margin-top: 6px;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 4px 0;
+      font-size: var(--font-size-small);
+      text-align: center;
+    }
+
+    .statement-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin: 18px 0 12px 0;
+      letter-spacing: 2px;
+      border-top: 2px solid var(--border-color);
+      border-bottom: 2px solid var(--border-color);
+      padding: 10px 0;
+      background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+    }
+
+    .customer-info {
+      margin: 12px 0;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #e0e0e0;
+    }
+
+    .customer-info h3 {
+      margin-bottom: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #000;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+    }
+
+    .customer-info div {
+      font-size: 12px;
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+
+    .date-range {
+      text-align: center;
+      margin: 12px 0;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 3px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+
+    table, th, td {
+      border: 1px solid var(--border-color);
+    }
+
+    thead {
+      background: linear-gradient(to bottom, #e9ecef 0%, #dee2e6 100%);
+    }
+
+    th {
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 8px 6px;
+      font-size: 11.5px;
+      line-height: 1.4;
+      vertical-align: middle;
+    }
+
+    .col-date {
+      width: 85px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .col-invoice {
+      width: 105px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .col-particulars {
+      text-align: left;
+      padding-left: 10px;
+      font-weight: 500;
+    }
+
+    .col-amount {
+      width: 95px;
+      text-align: right;
+      padding-right: 10px;
+      font-weight: 600;
+    }
+
+    .col-received {
+      width: 95px;
+      text-align: right;
+      padding-right: 10px;
+      font-weight: 600;
+    }
+
+    .col-balance {
+      width: 105px;
+      text-align: right;
+      padding-right: 10px;
+      font-weight: 700;
+      background: #f8f9fa;
+    }
+
+    .item-row td {
+      padding: 5px 6px 5px 30px;
+      font-size: 10.5px;
+      color: #666;
+      background: #f9f9f9;
+      border-left: 2px solid #e9ecef;
+      font-style: italic;
+    }
+
+    .item-row .col-particulars {
+      padding-left: 35px;
+    }
+
+    .invoice-row {
+      background: #ffffff;
+    }
+
+    .invoice-row:hover {
+      background: #f8f9fa;
+    }
+
+    .opening-balance-row {
+      background: #fff3cd !important;
+      font-weight: 700;
+      border-top: 1px solid #ffc107;
+      border-bottom: 1px solid #ffc107;
+    }
+
+    .total-row {
+      background: linear-gradient(to bottom, #e9ecef 0%, #dee2e6 100%);
+      font-weight: 800;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12px;
+    }
+
+    .total-row td {
+      padding: 10px 10px;
+    }
+
+    .final-balance {
+      margin-top: 25px;
+      text-align: right;
+      font-size: 17px;
+      font-weight: 800;
+      padding: 15px 20px;
+      border: 2px solid var(--border-color);
+      background: linear-gradient(to right, #ffffff 0%, #f8f9fa 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      letter-spacing: 0.5px;
+    }
+
+    .final-balance span {
+      color: #d9534f;
+      font-size: 19px;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .controls,
+      .date-selector {
+        display: none !important;
+      }
+
+      .page {
+        width: 210mm;
+        min-height: auto;
+        margin: 0;
+        padding: 10mm;
+        box-shadow: none;
+        border: none;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="date-selector" id="dateSelector">
+    <h3>Generate Statement of Account</h3>
+    <div class="date-inputs">
+      <div class="date-field">
+        <label for="fromDate">From Date:</label>
+        <input type="date" id="fromDate">
+      </div>
+      <div class="date-field">
+        <label for="toDate">To Date:</label>
+        <input type="date" id="toDate">
+      </div>
+      <button class="btn-generate" onclick="loadStatement()">Generate Statement</button>
+    </div>
+  </div>
+
+  <div class="controls" id="controls" style="display: none;">
+    <button class="btn-back" onclick="goBack()">← Back</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+  </div>
+
+  <div class="page" id="statementPage">
+    <!-- Header -->
+    <div class="header-top">
+      <div class="small-seal">
+        <img src="/image/logo1.png" alt="seal">
+      </div>
+      <div class="center-logo">
+        <img src="/image/sandhya.png" alt="Sandhiya Sea Food Supplier">
+      </div>
+      <div class="owner-info">
+        <div><strong>Ramesh Rathod :</strong> 9820954719<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9819486341</div>
+      </div>
+    </div>
+
+    <div class="msme-fssai">
+      <div class="fssai-block">
+        <img src="/image/fssai.png" alt="FSSAI" class="fssai-img" />
+        <strong>11524001000123</strong>
+      </div>
+      <div><span class="udyam">UDYAM-MH-19-0276267</span></div>
+    </div>
+
+    <div class="top-band">
+      <span style="font-weight:800;">
+        &#128205; 1773 BPT Gowdown Near Police Station Sassoon Dock Colaba Mumbai -400005
+      </span>
+    </div>
+
+    <!-- Statement Title -->
+    <div class="statement-title">Statement of Account</div>
+
+    <!-- Customer Info -->
+    <div class="customer-info">
+      <h3 id="customerName">Customer Name</h3>
+      <div id="customerAddress"></div>
+      <div id="customerPhone"></div>
+      <div id="customerGstin"></div>
+    </div>
+
+    <!-- Date Range -->
+    <div class="date-range" id="dateRange">
+      Period: <span id="periodDisplay"></span>
+    </div>
+
+    <!-- Statement Table -->
+    <table>
+      <thead>
+        <tr>
+          <th class="col-date">Date</th>
+          <th class="col-invoice">Invoice No.</th>
+          <th class="col-particulars">Particulars</th>
+          <th class="col-amount">Amount (₹)</th>
+          <th class="col-received">Received (₹)</th>
+          <th class="col-balance">Balance (₹)</th>
+        </tr>
+      </thead>
+      <tbody id="statementBody">
+        <tr>
+          <td colspan="6" style="text-align:center;padding:20px;">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Final Balance -->
+    <div class="final-balance">
+      Final Outstanding Balance: <span id="finalBalance">₹0.00</span>
+    </div>
+  </div>
+
+  <script src="/js/statement.js"></script>
+</body>
+</html>

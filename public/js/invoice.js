@@ -37,9 +37,18 @@ async function loadCustomerData() {
       document.getElementById('customerName').value = invoice.customer_name;
       document.getElementById('shippingAddress').value = invoice.address || '';
       document.getElementById('invoiceNo').value = invoice.invoice_number;
-      document.getElementById('billDate').value = invoice.invoice_date;
-      document.getElementById('receivedAmount').value = (invoice.received_amount || 0).toFixed(2);
-      document.getElementById('previousBalance').value = (invoice.previous_balance || 0).toFixed(2);
+
+      // Normalise API date to the yyyy-MM-dd format expected by the date input
+      const parsedInvoiceDate = invoice.invoice_date ? new Date(invoice.invoice_date) : null;
+      document.getElementById('billDate').value = parsedInvoiceDate && !isNaN(parsedInvoiceDate)
+        ? parsedInvoiceDate.toISOString().split('T')[0]
+        : '';
+
+      // Ensure numeric values before calling toFixed to avoid TypeError when API returns strings
+      const receivedAmount = parseFloat(invoice.received_amount) || 0;
+      const previousBalance = parseFloat(invoice.previous_balance) || 0;
+      document.getElementById('receivedAmount').value = receivedAmount.toFixed(2);
+      document.getElementById('previousBalance').value = previousBalance.toFixed(2);
       
       // Get row count from localStorage or use items count with minimum of 5
       const savedRowCount = localStorage.getItem(`invoice_${invoiceId}_rowCount`);

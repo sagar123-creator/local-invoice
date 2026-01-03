@@ -119,6 +119,23 @@
       background: #5568d3;
     }
 
+    .btn-statement {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.3s;
+      margin-left: 10px;
+    }
+
+    .btn-statement:hover {
+      background: #218838;
+    }
+
     .invoices-table {
       background: white;
       border-radius: 8px;
@@ -191,7 +208,10 @@
 
     <div class="top-bar">
       <h2>Invoices</h2>
-      <button class="btn-add" onclick="createNewInvoice()">+ Create Invoice</button>
+      <div>
+        <button class="btn-add" onclick="createNewInvoice()">+ Create Invoice</button>
+        <button class="btn-statement" onclick="generateStatement()">📊 Generate Statement</button>
+      </div>
     </div>
 
     <div class="invoices-table">

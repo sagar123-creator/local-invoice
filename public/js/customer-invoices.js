@@ -42,6 +42,9 @@ async function loadCustomer() {
 async function loadInvoices() {
   try {
     const response = await fetch(`/api/customers/${customerId}/invoices`);
+    if (!response.ok) {
+      throw new Error('Failed to load invoices');
+    }
     const invoices = await response.json();
     
     const tbody = document.getElementById('invoicesBody');
@@ -52,14 +55,14 @@ async function loadInvoices() {
     }
 
     tbody.innerHTML = invoices.map(invoice => {
-      const totalAmount = parseFloat(invoice.total_amount) || 0;
+      const totalAmount = parseFloat(invoice.totalAmount) || 0;
       return `
       <tr>
-        <td onclick="viewInvoice(${invoice.id})" style="cursor:pointer;">${invoice.invoice_number}</td>
-        <td onclick="viewInvoice(${invoice.id})" style="cursor:pointer;">${formatDate(invoice.invoice_date)}</td>
-        <td onclick="viewInvoice(${invoice.id})" style="cursor:pointer;" class="amount">₹${totalAmount.toFixed(2)}</td>
-        <td onclick="viewInvoice(${invoice.id})" style="cursor:pointer;">${formatDateTime(invoice.created_at)}</td>
-        <td><button onclick="deleteInvoice(${invoice.id}, '${invoice.invoice_number}')" style="background:#dc3545;color:white;border:none;padding:4px 8px;border-radius:3px;cursor:pointer;">Delete</button></td>
+        <td onclick="viewInvoice('${invoice._id}')" style="cursor:pointer;">${invoice.invoiceNumber}</td>
+        <td onclick="viewInvoice('${invoice._id}')" style="cursor:pointer;">${formatDate(invoice.invoiceDate)}</td>
+        <td onclick="viewInvoice('${invoice._id}')" style="cursor:pointer;" class="amount">₹${totalAmount.toFixed(2)}</td>
+        <td onclick="viewInvoice('${invoice._id}')" style="cursor:pointer;">${formatDateTime(invoice.createdAt)}</td>
+        <td><button onclick="deleteInvoice('${invoice._id}', '${invoice.invoiceNumber}')" style="background:#dc3545;color:white;border:none;padding:4px 8px;border-radius:3px;cursor:pointer;">Delete</button></td>
       </tr>
       `;
     }).join('');

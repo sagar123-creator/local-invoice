@@ -90,14 +90,14 @@ async function loadStatement() {
 
       // Add each invoice with its items
       data.invoices.forEach(invoice => {
-        const totalAmount = parseFloat(invoice.total_amount) || 0;
-        const receivedAmount = parseFloat(invoice.received_amount) || 0;
+        const totalAmount = parseFloat(invoice.totalAmount) || 0;
+        const receivedAmount = parseFloat(invoice.receivedAmount) || 0;
         runningBalance = runningBalance + totalAmount - receivedAmount;
 
         html += `
           <tr class="invoice-row">
-            <td class="col-date">${formatDate(invoice.invoice_date)}</td>
-            <td class="col-invoice">${invoice.invoice_number}</td>
+            <td class="col-date">${formatDate(invoice.invoiceDate)}</td>
+            <td class="col-invoice">${invoice.invoiceNumber}</td>
             <td class="col-particulars"><strong>Invoice</strong></td>
             <td class="col-amount">${totalAmount.toFixed(2)}</td>
             <td class="col-received">${receivedAmount > 0 ? receivedAmount.toFixed(2) : '—'}</td>
@@ -125,8 +125,8 @@ async function loadStatement() {
       });
 
       // Add total row
-      const totalInvoiceAmount = data.invoices.reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
-      const totalReceived = data.invoices.reduce((sum, inv) => sum + (parseFloat(inv.received_amount) || 0), 0);
+      const totalInvoiceAmount = data.invoices.reduce((sum, inv) => sum + (parseFloat(inv.totalAmount) || 0), 0);
+      const totalReceived = data.invoices.reduce((sum, inv) => sum + (parseFloat(inv.receivedAmount) || 0), 0);
 
       html += `
         <tr class="total-row">

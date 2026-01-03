@@ -36,17 +36,17 @@ async function loadCustomerData() {
       customerId = invoice.customer_id;
       document.getElementById('customerName').value = invoice.customer_name;
       document.getElementById('shippingAddress').value = invoice.address || '';
-      document.getElementById('invoiceNo').value = invoice.invoice_number;
+      document.getElementById('invoiceNo').value = invoice.invoiceNumber;
 
       // Normalise API date to the yyyy-MM-dd format expected by the date input
-      const parsedInvoiceDate = invoice.invoice_date ? new Date(invoice.invoice_date) : null;
+      const parsedInvoiceDate = invoice.invoiceDate ? new Date(invoice.invoiceDate) : null;
       document.getElementById('billDate').value = parsedInvoiceDate && !isNaN(parsedInvoiceDate)
         ? parsedInvoiceDate.toISOString().split('T')[0]
         : '';
 
       // Ensure numeric values before calling toFixed to avoid TypeError when API returns strings
-      const receivedAmount = parseFloat(invoice.received_amount) || 0;
-      const previousBalance = parseFloat(invoice.previous_balance) || 0;
+      const receivedAmount = parseFloat(invoice.receivedAmount) || 0;
+      const previousBalance = parseFloat(invoice.previousBalance) || 0;
       document.getElementById('receivedAmount').value = receivedAmount.toFixed(2);
       document.getElementById('previousBalance').value = previousBalance.toFixed(2);
       

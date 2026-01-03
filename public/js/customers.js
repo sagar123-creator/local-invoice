@@ -18,7 +18,7 @@ async function loadCustomers() {
     // Fetch balance for each customer
     for (let customer of customers) {
       try {
-        const balanceResponse = await fetch(`/api/customers/${customer.id}/latest-balance`);
+        const balanceResponse = await fetch(`/api/customers/${customer._id}/latest-balance`);
         const balanceData = await balanceResponse.json();
        customer.balance = parseFloat(balanceData.balance) || 0;
       } catch (error) {
@@ -47,8 +47,8 @@ function displayCustomers(customersToDisplay) {
     const balanceClass = balance > 0 ? 'negative' : (balance === 0 ? 'zero' : '');
     return `
     <div class="customer-card">
-      <button class="btn-delete-customer" onclick="event.stopPropagation(); deleteCustomer(${customer.id}, '${customer.name.replace(/'/g, "\\'")}')">Delete</button>
-      <div onclick="viewCustomer(${customer.id})" style="cursor:pointer;">
+      <button class="btn-delete-customer" onclick="event.stopPropagation(); deleteCustomer('${customer._id}', '${customer.name.replace(/'/g, "\\'")}')">Delete</button>
+      <div onclick="viewCustomer('${customer._id}')" style="cursor:pointer;">
         <div class="customer-name">${customer.name}</div>
         <div class="customer-info">
           ${customer.address ? `<p>📍 ${customer.address}</p>` : ''}

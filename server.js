@@ -1,22 +1,59 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const mysql = require('mysql2/promise');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* DB */
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+/* ================== DATABASE ================== */
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => {
+    console.error('❌ MongoDB connection failed:', err.message);
+    process.exit(1);
+  });
+
+/* ================== SCHEMAS ================== */
+const UserSchema = new mongoose.Schema({
+  username: { type: String, unique: true },
+  password: String
 });
 
-/* Middleware */
+const InvoiceItemSchema = new mongoose.Schema({
+  particular: String,
+  quantity: Number,
+  rate: Number,
+  amount: Number
+});
+
+const InvoiceSchema = new mongoose.Schema({
+  invoiceNumber: String,
+  invoiceDate: String,
+  items: [InvoiceItemSchema],
+  totalAmount: Number,
+  receivedAmount: Number,
+  previousBalance: Number,
+  currentBalance: Number,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const CustomerSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  phone: String,
+  email: String,
+  gstin: String,
+  invoices: [InvoiceSchema]
+});
+
+const User = mongoose.model('User', UserSchema);
+const Customer = mongoose.model('Customer', CustomerSchema);
+
+/* ================== MIDDLEWARE ================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -35,179 +72,173 @@ function auth(req, res, next) {
   next();
 }
 
-/* Pages */
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/login.html'));
-});
+/* ================== PAGES ================== */
+app.get('/', (req, res) =>
+  res.sendFile(path.join(__dirname, 'public/login.html'))
+);
 
-app.get('/customers.html', auth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/customers.html'));
-});
+app.get('/customers.html', auth, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public/customers.html'))
+);
 
-app.get('/customer-invoices.html', auth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/customer-invoices.html'));
-});
+app.get('/customer-invoices.html', auth, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public/customer-invoices.html'))
+);
 
-app.get('/invoice.html', auth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/invoice.html'));
-});
+app.get('/invoice.html', auth, (req, res) =>
+  res.sendFile(path.join(__dirname, 'public/invoice.html'))
+);
 
-/* Auth API */
+/* ================== AUTH ================== */
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const [rows] = await db.query('SELECT * FROM users WHERE username=?', [username]);
-  if (!rows.length) return res.json({ success: false });
 
-  const ok = bcrypt.compareSync(password, rows[0].password);
+  const user = await User.findOne({ username });
+  if (!user) return res.json({ success: false });
+
+  const ok = bcrypt.compareSync(password, user.password);
   if (!ok) return res.json({ success: false });
 
-  req.session.userId = rows[0].id;
+  req.session.userId = user._id;
   res.json({ success: true });
-});
-
-app.post('/api/logout', (req, res) => {
-  req.session.destroy(() => res.json({ success: true }));
 });
 
 app.get('/api/auth/check', (req, res) => {
   res.json({ authenticated: !!req.session.userId });
 });
 
-/* Customers */
+/* ================== CUSTOMERS ================== */
 app.get('/api/customers', auth, async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM customers ORDER BY name');
-  res.json(rows);
+  const customers = await Customer.find({}, { invoices: 0 });
+  res.json(customers);
 });
 
 app.post('/api/customers', auth, async (req, res) => {
-  const { name, address, phone, email, gstin } = req.body;
-  await db.query(
-    'INSERT INTO customers (name,address,phone,email,gstin) VALUES (?,?,?,?,?)',
-    [name, address, phone, email, gstin]
-  );
+  await Customer.create(req.body);
   res.json({ success: true });
 });
 
-app.get('/api/customers/:id', auth, async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM customers WHERE id=?', [req.params.id]);
-  res.json(rows[0]);
-});
-
-app.get('/api/customers/:id/latest-balance', auth, async (req, res) => {
-  const [rows] = await db.query(
-    'SELECT current_balance FROM invoices WHERE customer_id=? ORDER BY created_at DESC LIMIT 1',
-    [req.params.id]
-  );
-  res.json({ balance: rows.length ? rows[0].current_balance : 0 });
-});
-
-app.get('/api/customers/:id/statement', auth, async (req, res) => {
-  const { fromDate, toDate } = req.query;
-  const customerId = req.params.id;
-
+app.delete('/api/customers/:id', auth, async (req, res) => {
   try {
-    // Get customer info
-    const [customerRows] = await db.query('SELECT * FROM customers WHERE id=?', [customerId]);
-    const customer = customerRows[0];
-
-    // Get opening balance (last balance before fromDate)
-    const [openingRows] = await db.query(
-      'SELECT current_balance FROM invoices WHERE customer_id=? AND invoice_date < ? ORDER BY invoice_date DESC, created_at DESC LIMIT 1',
-      [customerId, fromDate]
-    );
-    const openingBalance = openingRows.length ? parseFloat(openingRows[0].current_balance) : 0;
-
-    // Get invoices in date range
-    const [invoices] = await db.query(
-      'SELECT * FROM invoices WHERE customer_id=? AND invoice_date >= ? AND invoice_date <= ? ORDER BY invoice_date ASC, created_at ASC',
-      [customerId, fromDate, toDate]
-    );
-
-    // Get items for each invoice
-    for (let invoice of invoices) {
-      const [items] = await db.query(
-        'SELECT * FROM invoice_items WHERE invoice_id=? ORDER BY id',
-        [invoice.id]
-      );
-      invoice.items = items;
+    if (!req.params.id || req.params.id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid customer ID' });
     }
-
-    res.json({ customer, openingBalance, invoices });
+    await Customer.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error generating statement:', error);
-    res.status(500).json({ error: 'Error generating statement' });
+    console.error('Error deleting customer:', error);
+    res.status(500).json({ error: 'Error deleting customer' });
   }
 });
 
-/* Invoices */
-app.get('/api/customers/:id/invoices', auth, async (req, res) => {
-  const [rows] = await db.query(
-    'SELECT * FROM invoices WHERE customer_id=? ORDER BY created_at DESC',
-    [req.params.id]
-  );
-  res.json(rows);
+app.get('/api/customers/:id', auth, async (req, res) => {
+  if (!req.params.id || req.params.id === 'undefined') {
+    return res.status(400).json({ error: 'Invalid customer ID' });
+  }
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+  res.json(customer);
 });
 
-app.get('/api/invoices/:id', auth, async (req, res) => {
-  const [[invoice]] = await db.query(
-    `SELECT i.*, c.name AS customer_name, c.address
-     FROM invoices i
-     JOIN customers c ON i.customer_id = c.id
-     WHERE i.id=?`,
-    [req.params.id]
-  );
+app.get('/api/customers/:id/latest-balance', auth, async (req, res) => {
+  if (!req.params.id || req.params.id === 'undefined') {
+    return res.status(400).json({ error: 'Invalid customer ID' });
+  }
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+  const last = customer.invoices.at(-1);
+  res.json({ balance: last ? last.currentBalance : 0 });
+});
 
-  const [items] = await db.query('SELECT * FROM invoice_items WHERE invoice_id=?', [req.params.id]);
-  invoice.items = items;
-  res.json(invoice);
+/* ================== INVOICES ================== */
+app.get('/api/customers/:id/invoices', auth, async (req, res) => {
+  if (!req.params.id || req.params.id === 'undefined') {
+    return res.status(400).json({ error: 'Invalid customer ID' });
+  }
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+  
+  // Sort invoices by creation date (newest first)
+  const sortedInvoices = customer.invoices.sort((a, b) => 
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  
+  res.json(sortedInvoices);
 });
 
 app.post('/api/invoices', auth, async (req, res) => {
   const { customerId, invoiceNumber, invoiceDate, items, receivedAmount, previousBalance } = req.body;
-  let total = items.reduce((s, i) => s + i.quantity * i.rate, 0);
-  let current = total - receivedAmount + previousBalance;
 
-  const [r] = await db.query(
-    `INSERT INTO invoices (customer_id,invoice_number,invoice_date,total_amount,received_amount,previous_balance,current_balance)
-     VALUES (?,?,?,?,?,?,?)`,
-    [customerId, invoiceNumber, invoiceDate, total, receivedAmount, previousBalance, current]
+  const total = items.reduce((s, i) => s + i.quantity * i.rate, 0);
+  const current = total - receivedAmount + previousBalance;
+
+  const customer = await Customer.findByIdAndUpdate(
+    customerId,
+    {
+      $push: {
+        invoices: {
+          invoiceNumber,
+          invoiceDate,
+          items,
+          totalAmount: total,
+          receivedAmount,
+          previousBalance,
+          currentBalance: current
+        }
+      }
+    },
+    { new: true }
   );
 
-  for (let i of items) {
-    await db.query(
-      'INSERT INTO invoice_items (invoice_id,particular,quantity,rate,amount) VALUES (?,?,?,?,?)',
-      [r.insertId, i.particular, i.quantity, i.rate, i.quantity * i.rate]
-    );
-  }
+  const newInvoice = customer.invoices.at(-1);
+  res.json({ success: true, id: newInvoice._id });
+});
 
-  res.json({ success: true, id: r.insertId });
+app.get('/api/invoices/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id || req.params.id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid invoice ID' });
+    }
+
+    const customer = await Customer.findOne({ 'invoices._id': req.params.id });
+    if (!customer) return res.status(404).json({ error: 'Invoice not found' });
+
+    const invoice = customer.invoices.id(req.params.id);
+    if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+    res.json({
+      ...invoice.toObject(),
+      customer_name: customer.name,
+      address: customer.address,
+      customer_id: customer._id
+    });
+  } catch (error) {
+    console.error('Error loading invoice:', error);
+    res.status(500).json({ error: 'Error loading invoice' });
+  }
 });
 
 app.put('/api/invoices/:id', auth, async (req, res) => {
   const { invoiceNumber, invoiceDate, items, receivedAmount, previousBalance } = req.body;
   const invoiceId = req.params.id;
-  
+
   try {
-    let total = items.reduce((s, i) => s + i.quantity * i.rate, 0);
-    let current = total - receivedAmount + previousBalance;
+    const total = items.reduce((s, i) => s + i.quantity * i.rate, 0);
+    const current = total - receivedAmount + previousBalance;
 
-    // Update invoice
-    await db.query(
-      `UPDATE invoices SET invoice_number=?, invoice_date=?, total_amount=?, received_amount=?, previous_balance=?, current_balance=? WHERE id=?`,
-      [invoiceNumber, invoiceDate, total, receivedAmount, previousBalance, current, invoiceId]
-    );
+    const customer = await Customer.findOne({ 'invoices._id': invoiceId });
+    if (!customer) return res.status(404).json({ error: 'Invoice not found' });
 
-    // Delete existing items
-    await db.query('DELETE FROM invoice_items WHERE invoice_id=?', [invoiceId]);
+    const invoice = customer.invoices.id(invoiceId);
+    invoice.invoiceNumber = invoiceNumber;
+    invoice.invoiceDate = invoiceDate;
+    invoice.items = items;
+    invoice.totalAmount = total;
+    invoice.receivedAmount = receivedAmount;
+    invoice.previousBalance = previousBalance;
+    invoice.currentBalance = current;
 
-    // Insert new items
-    for (let i of items) {
-      await db.query(
-        'INSERT INTO invoice_items (invoice_id,particular,quantity,rate,amount) VALUES (?,?,?,?,?)',
-        [invoiceId, i.particular, i.quantity, i.rate, i.quantity * i.rate]
-      );
-    }
-
+    await customer.save();
     res.json({ success: true, id: invoiceId });
   } catch (error) {
     console.error('Error updating invoice:', error);
@@ -217,10 +248,20 @@ app.put('/api/invoices/:id', auth, async (req, res) => {
 
 app.delete('/api/invoices/:id', auth, async (req, res) => {
   try {
-    // Delete invoice items first
-    await db.query('DELETE FROM invoice_items WHERE invoice_id=?', [req.params.id]);
-    // Delete invoice
-    await db.query('DELETE FROM invoices WHERE id=?', [req.params.id]);
+    if (!req.params.id || req.params.id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid invoice ID' });
+    }
+
+    const customer = await Customer.findOne({ 'invoices._id': req.params.id });
+    if (!customer) return res.status(404).json({ error: 'Invoice not found' });
+
+    const invoice = customer.invoices.id(req.params.id);
+    if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+    // Use pull method instead of remove for newer Mongoose versions
+    customer.invoices.pull({ _id: req.params.id });
+    await customer.save();
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting invoice:', error);
@@ -228,7 +269,56 @@ app.delete('/api/invoices/:id', auth, async (req, res) => {
   }
 });
 
-/* Start */
+app.get('/api/customers/:id/statement', auth, async (req, res) => {
+  const { fromDate, toDate } = req.query;
+  const customerId = req.params.id;
+
+  if (!customerId || customerId === 'undefined') {
+    return res.status(400).json({ error: 'Invalid customer ID' });
+  }
+
+  try {
+    const customer = await Customer.findById(customerId);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+    const fromDateObj = new Date(fromDate);
+    const toDateObj = new Date(toDate);
+
+    // Get opening balance (last invoice before fromDate)
+    const invoicesBeforeRange = customer.invoices.filter(
+      inv => new Date(inv.invoiceDate) < fromDateObj
+    );
+    const openingBalance = invoicesBeforeRange.length > 0
+      ? invoicesBeforeRange[invoicesBeforeRange.length - 1].currentBalance
+      : 0;
+
+    // Get invoices in date range
+    const invoicesInRange = customer.invoices.filter(inv => {
+      const invDate = new Date(inv.invoiceDate);
+      return invDate >= fromDateObj && invDate <= toDateObj;
+    });
+
+    res.json({
+      customer: {
+        name: customer.name,
+        address: customer.address,
+        phone: customer.phone,
+        gstin: customer.gstin
+      },
+      openingBalance,
+      invoices: invoicesInRange
+    });
+  } catch (error) {
+    console.error('Error generating statement:', error);
+    res.status(500).json({ error: 'Error generating statement' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(() => res.json({ success: true }));
+});
+
+/* ================== START ================== */
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
